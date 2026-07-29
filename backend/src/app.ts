@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { env } from './infrastructure/config/env.js';
+import routes from './interfaces/routes/index.js';
+import { errorMiddleware } from './interfaces/middlewares/error.middleware.js';
 
 const app = express();
 
@@ -10,5 +11,9 @@ app.use(express.json());
 app.get('/', (_req, res) => {
   res.json({ status: 'ok', message: 'Backend running' });
 });
+
+app.use('/api', routes);
+
+app.use(errorMiddleware);
 
 export default app;
