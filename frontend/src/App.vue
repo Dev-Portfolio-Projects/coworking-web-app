@@ -1,9 +1,6 @@
-<script setup>
+<script setup lang="ts">
 </script>
 
 <template>
-  <h1>Vue 3 + Vite funcionando</h1>
+  <router-view />
 </template>
-
-<style>
-</style>
