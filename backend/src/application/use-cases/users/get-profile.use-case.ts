@@ -7,7 +7,7 @@ export class GetProfileUseCase {
   async execute(userId: number) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundError('User');
+      throw new NotFoundError('Usuario');
     }
 
     return {

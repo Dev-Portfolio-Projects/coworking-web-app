@@ -10,23 +10,42 @@ export function errorMiddleware(
 ) {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
-      status: 'error',
+      success: false,
       message: err.message,
     });
     return;
   }
 
   if (err instanceof ZodError) {
+    const fieldLabels: Record<string, string> = {
+      email: 'Correo electrónico',
+      password: 'Contraseña',
+      name: 'Nombre',
+    };
+
+    const messages = err.errors.map((e) => {
+      const path = e.path.join('.');
+      const label = fieldLabels[path] || path;
+
+      if (e.code === 'too_small' && e.type === 'string') {
+        return `${label}: debe tener al menos ${e.minimum} caracteres`;
+      }
+      if (e.code === 'invalid_string') {
+        return `${label}: no es válido`;
+      }
+      return `${label}: ${e.message}`;
+    });
+
     res.status(400).json({
-      status: 'error',
-      message: 'Validation error',
+      success: false,
+      message: messages.join('. '),
       errors: err.errors,
     });
     return;
   }
 
   res.status(500).json({
-    status: 'error',
-    message: 'Internal server error',
+    success: false,
+    message: 'Error interno del servidor',
   });
 }

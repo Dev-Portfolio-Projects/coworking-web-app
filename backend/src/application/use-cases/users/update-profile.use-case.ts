@@ -8,7 +8,7 @@ export class UpdateProfileUseCase {
   async execute(userId: number, dto: UpdateProfileDto) {
     const user = await this.userRepository.findById(userId);
     if (!user) {
-      throw new NotFoundError('User');
+      throw new NotFoundError('Usuario');
     }
 
     return {

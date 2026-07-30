@@ -14,7 +14,7 @@ export class RegisterUseCase {
   async execute(dto: RegisterDto) {
     const existing = await this.userRepository.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictError('Email already registered');
+      throw new ConflictError('El correo ya está registrado');
     }
 
     const hashedPassword = await this.hashService.hash(dto.password);

@@ -3,6 +3,7 @@ import { RegisterUseCase } from '../../application/use-cases/auth/register.use-c
 import { LoginUseCase } from '../../application/use-cases/auth/login.use-case.js';
 import { registerSchema } from '../../application/dto/auth/register.dto.js';
 import { loginSchema } from '../../application/dto/auth/login.dto.js';
+import { success } from '../../shared/response/index.js';
 
 export class AuthController {
   constructor(
@@ -14,7 +15,7 @@ export class AuthController {
     try {
       const dto = registerSchema.parse(req.body);
       const result = await this.registerUseCase.execute(dto);
-      res.status(201).json(result);
+      res.status(201).json(success(result, 'Usuario registrado exitosamente'));
     } catch (error) {
       next(error);
     }
@@ -24,7 +25,7 @@ export class AuthController {
     try {
       const dto = loginSchema.parse(req.body);
       const result = await this.loginUseCase.execute(dto);
-      res.json(result);
+      res.json(success(result, 'Inicio de sesión exitoso'));
     } catch (error) {
       next(error);
     }

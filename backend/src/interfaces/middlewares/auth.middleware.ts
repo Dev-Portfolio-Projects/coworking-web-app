@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from 'express';
 import type { AuthService } from '../../domain/services/auth.service.js';
+import { UnauthorizedError } from '../../shared/errors/index.js';
 
 export class AuthMiddleware {
   constructor(private readonly authService: AuthService) {}
@@ -7,7 +8,7 @@ export class AuthMiddleware {
   authenticate = (req: Request, _res: Response, next: NextFunction) => {
     const header = req.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
-      next(new Error('Unauthorized'));
+      next(new UnauthorizedError());
       return;
     }
 
@@ -17,7 +18,7 @@ export class AuthMiddleware {
       (req as any).user = payload;
       next();
     } catch {
-      next(new Error('Unauthorized'));
+      next(new UnauthorizedError());
     }
   };
 }

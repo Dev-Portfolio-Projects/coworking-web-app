@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { GetProfileUseCase } from '../../application/use-cases/users/get-profile.use-case.js';
 import { UpdateProfileUseCase } from '../../application/use-cases/users/update-profile.use-case.js';
 import { updateProfileSchema } from '../../application/dto/users/update-profile.dto.js';
+import { success } from '../../shared/response/index.js';
 
 export class UserController {
   constructor(
@@ -13,7 +14,7 @@ export class UserController {
     try {
       const { userId } = (req as any).user;
       const result = await this.getProfileUseCase.execute(userId);
-      res.json(result);
+      res.json(success(result, 'Perfil obtenido exitosamente'));
     } catch (error) {
       next(error);
     }
@@ -24,7 +25,7 @@ export class UserController {
       const { userId } = (req as any).user;
       const dto = updateProfileSchema.parse(req.body);
       const result = await this.updateProfileUseCase.execute(userId, dto);
-      res.json(result);
+      res.json(success(result, 'Perfil actualizado exitosamente'));
     } catch (error) {
       next(error);
     }

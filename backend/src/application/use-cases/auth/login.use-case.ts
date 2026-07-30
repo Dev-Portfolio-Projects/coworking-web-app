@@ -14,12 +14,12 @@ export class LoginUseCase {
   async execute(dto: LoginDto) {
     const user = await this.userRepository.findByEmail(dto.email);
     if (!user) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('El correo no está registrado');
     }
 
     const valid = await this.hashService.compare(dto.password, user.password);
     if (!valid) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('Contraseña incorrecta');
     }
 
     const token = this.authService.generateToken(user);
