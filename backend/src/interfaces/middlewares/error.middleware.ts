@@ -21,6 +21,10 @@ export function errorMiddleware(
       email: 'Correo electrónico',
       password: 'Contraseña',
       name: 'Nombre',
+      description: 'Descripción',
+      capacity: 'Capacidad',
+      priceHour: 'Precio por hora',
+      status: 'Estado',
     };
 
     const messages = err.errors.map((e) => {

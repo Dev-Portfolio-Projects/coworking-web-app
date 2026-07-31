@@ -7,7 +7,7 @@ import { Toaster } from "vue-sonner";
   <div class="flex h-screen flex-col overflow-hidden">
     <AppNav />
 
-    <main class="flex-1 overflow-hidden">
+    <main class="flex-1 min-h-0 overflow-hidden">
       <router-view />
     </main>
   </div>

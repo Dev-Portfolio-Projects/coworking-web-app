@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Motion } from "motion-v";
-import { User, Mail, Lock, UserPlus, ArrowRight, Building2, LoaderCircle } from "@lucide/vue";
+import { User, Mail, Lock, UserPlus, ArrowRight, LoaderCircle } from "@lucide/vue";
 import MouseGlowBackground from "@/components/MouseGlowBackground.vue";
 import { useRetryButton } from "@/composables/useRetryButton";
 
@@ -25,7 +25,7 @@ const buttonState = computed(() => {
 async function handleSubmit() {
   await execute(async () => {
     await auth.register(email.value, password.value, name.value);
-    router.push("/profile");
+    router.push("/");
   });
 }
 </script>
@@ -34,7 +34,7 @@ async function handleSubmit() {
   <MouseGlowBackground>
     <div class="relative h-full overflow-hidden">
       <section
-        class="relative z-10 mx-auto flex h-full max-w-6xl items-center justify-center px-6"
+        class="relative z-10 mx-auto flex h-full max-w-6xl items-center justify-center px-6 py-5"
       >
         <Motion
           class="w-full max-w-md"
@@ -53,28 +53,6 @@ async function handleSubmit() {
           <div
             class="rounded-3xl border border-gray-200 bg-white/80 p-8 backdrop-blur-xl"
           >
-            <Motion
-              class="mb-6 flex justify-center"
-              :initial="{
-                scale: 0.8,
-                opacity: 0,
-              }"
-              :animate="{
-                scale: 1,
-                opacity: 1,
-              }"
-              :transition="{
-                delay: 0.2,
-                duration: 0.5,
-              }"
-            >
-              <div
-                class="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-600 text-white"
-              >
-                <Building2 :size="28" />
-              </div>
-            </Motion>
-
             <h1
               class="text-center text-2xl font-bold tracking-tight text-gray-900"
             >

@@ -22,7 +22,7 @@ export class RegisterUseCase {
       email: dto.email,
       password: hashedPassword,
       name: dto.name,
-      roleId: 3, // CLIENT
+      roleId: 3,
     });
 
     const token = this.authService.generateToken(user);

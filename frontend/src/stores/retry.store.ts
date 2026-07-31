@@ -59,17 +59,11 @@ export const useRetryStore = defineStore('retry', () => {
     }
   }
 
-  function disposeKey(key: string) {
-    clearCooldown(key)
-    delete items.value[key]
-  }
-
   return {
     getOrCreate,
     incrementErrors,
     startCooldown,
     clearCooldown,
     reset,
-    disposeKey,
   }
 })

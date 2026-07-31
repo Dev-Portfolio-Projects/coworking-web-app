@@ -10,7 +10,6 @@ export function useRetryButton(key: string) {
   }
 
   const item = computed(() => store.getOrCreate(key))
-  const consecutiveErrors = computed(() => item.value.consecutiveErrors)
   const cooldownRemaining = computed(() => item.value.cooldownRemaining)
   const isBlocked = computed(() => cooldownRemaining.value > 0)
 
@@ -32,17 +31,10 @@ export function useRetryButton(key: string) {
     }
   }
 
-  function reset() {
-    isLoading.value = false
-    store.reset(key)
-  }
-
   return {
     isLoading,
     isBlocked,
-    consecutiveErrors,
     cooldownRemaining,
     execute,
-    reset,
   }
 }
