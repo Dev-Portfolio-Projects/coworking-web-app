@@ -17,6 +17,7 @@ import AdminPageLayout from "@/components/AdminPageLayout.vue";
 import PaginationBar from "@/components/PaginationBar.vue";
 import SelectDropdown from "@/components/SelectDropdown.vue";
 import BookingModal from "@/components/BookingModal.vue";
+import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Booking } from "@/services/booking.service";
 
 const bookingStore = useBookingStore();
@@ -106,10 +107,26 @@ function onConfirmCreated() {
   load();
 }
 
-async function handleCancel(id: number) {
-  if (!confirm("¿Cancelar esta reserva?")) return;
-  await bookingStore.cancelBooking(id);
-  load();
+const showCancelModal = ref(false);
+const cancellingBooking = ref<Booking | null>(null);
+const cancelling = ref(false);
+
+function openCancel(b: Booking) {
+  cancellingBooking.value = b;
+  showCancelModal.value = true;
+}
+
+async function confirmCancel() {
+  if (!cancellingBooking.value) return;
+  cancelling.value = true;
+  try {
+    await bookingStore.cancelBooking(cancellingBooking.value.id);
+    showCancelModal.value = false;
+    cancellingBooking.value = null;
+    load();
+  } finally {
+    cancelling.value = false;
+  }
 }
 
 onMounted(load);
@@ -235,7 +252,7 @@ onMounted(load);
                       <button
                         v-if="b.status !== 'CANCELLED'"
                         class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
-                        @click="handleCancel(b.id)"
+                        @click="openCancel(b)"
                       >
                         <XCircle :size="14" /> Cancelar
                       </button>
@@ -274,6 +291,20 @@ onMounted(load);
     admin-create
     @close="showConfirmModal = false"
     @created="onConfirmCreated"
+  />
+
+  <ConfirmModal
+    :show="showCancelModal"
+    title="Cancelar reserva"
+    :message="`¿Cancelar la reserva${cancellingBooking ? ` de ${cancellingBooking.user?.name ?? 'usuario'} en ${cancellingBooking.space?.name ?? 'espacio'}` : ''}?`"
+    :loading="cancelling"
+    confirm-label="Cancelar reserva"
+    :confirm-icon="XCircle"
+    @confirm="confirmCancel"
+    @cancel="
+      showCancelModal = false;
+      cancellingBooking = null;
+    "
   />
 </template>
 

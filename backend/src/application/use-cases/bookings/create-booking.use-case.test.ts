@@ -111,7 +111,7 @@ describe('CreateBookingUseCase', () => {
 
     expect(result).toEqual({ id: 10 });
     expect(bookingRepository.createIfAvailable).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 1, spaceId: 1, status: 'PENDING', totalPrice: '20.00' }),
+      expect.objectContaining({ userId: 1, spaceId: 1, status: 'CONFIRMED', totalPrice: '20.00' }),
     );
   });
 

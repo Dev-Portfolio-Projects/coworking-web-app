@@ -45,7 +45,7 @@ export class CreateBookingUseCase {
       startTime: dto.startTime,
       endTime: dto.endTime,
       totalPrice,
-      status: 'PENDING',
+      status: 'CONFIRMED',
       billingName: dto.billingName,
       billingDocument: dto.billingDocument,
       billingEmail: dto.billingEmail,

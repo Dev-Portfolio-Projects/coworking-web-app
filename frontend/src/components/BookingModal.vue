@@ -262,9 +262,9 @@ function resetForm() {
   formEndTime.value = ''
   selectedSlotId.value = null
   billingName.value =
-    props.booking?.billing?.billingName ?? props.booking?.user?.name ?? auth.user?.name ?? ''
+    props.booking?.billing?.billingName || props.booking?.user?.name || auth.user?.name || ''
   billingEmail.value =
-    props.booking?.billing?.billingEmail ?? props.booking?.user?.email ?? auth.user?.email ?? ''
+    props.booking?.billing?.billingEmail || props.booking?.user?.email || auth.user?.email || ''
   billingDocument.value = props.booking?.billing?.billingDocument ?? ''
   billingPhone.value = props.booking?.billing?.billingPhone ?? ''
   billingAddress.value = props.booking?.billing?.billingAddress ?? ''
@@ -365,7 +365,7 @@ async function handleSubmit() {
           </div>
 
           <div
-            v-if="isAdminCreate"
+            v-if="isAdminCreate && !isPreReservation"
             class="grid grid-cols-1 gap-4 px-6 pt-4 sm:grid-cols-2 sm:px-8"
           >
             <SelectDropdown

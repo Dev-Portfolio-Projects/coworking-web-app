@@ -51,6 +51,13 @@ export class DrizzleAmenityRepository implements AmenityRepository {
     return new AmenityEntity(r.id, r.name, r.description ?? undefined);
   }
 
+  async findByName(name: string): Promise<AmenityEntity | null> {
+    const rows = await this.db.select().from(amenities).where(and(eq(amenities.name, name), isNull(amenities.deletedAt))).limit(1);
+    if (rows.length === 0) return null;
+    const r = rows[0];
+    return new AmenityEntity(r.id, r.name, r.description ?? undefined);
+  }
+
   async isUsedInSpaces(id: number): Promise<boolean> {
     const rows = await this.db
       .select({ id: spaceAmenities.spaceId })

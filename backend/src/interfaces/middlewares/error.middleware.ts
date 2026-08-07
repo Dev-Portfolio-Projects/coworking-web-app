@@ -52,6 +52,27 @@ export function errorMiddleware(
     return;
   }
 
+  const dbError = err as { code?: string; detail?: string };
+
+  if (dbError.code === '23505') {
+    res.status(409).json({
+      success: false,
+      message: dbError.detail
+        ? dbError.detail.replace(/^Key \(/, '').replace(/\).*$/, '') + ' ya está en uso'
+        : 'Ya existe un registro con el mismo valor',
+    });
+    return;
+  }
+
+  if (dbError.code === '23503') {
+    res.status(409).json({
+      success: false,
+      message: 'No se puede eliminar porque está asociado a otros registros',
+    });
+    return;
+  }
+
+  console.error('[Error interno]', err);
   res.status(500).json({
     success: false,
     message: 'Error interno del servidor',

@@ -9,6 +9,7 @@ export interface AmenityListFilters {
 export interface AmenityRepository {
   findAll(filters?: AmenityListFilters): Promise<{ items: AmenityEntity[]; total: number }>;
   findById(id: number): Promise<AmenityEntity | null>;
+  findByName(name: string): Promise<AmenityEntity | null>;
   isUsedInSpaces(id: number): Promise<boolean>;
   create(data: { name: string; description?: string }): Promise<AmenityEntity>;
   update(id: number, data: { name?: string; description?: string }): Promise<AmenityEntity>;

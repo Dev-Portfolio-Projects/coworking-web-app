@@ -274,7 +274,7 @@ function extraAmenitiesCount(space: Space) {
                     </p>
                     <p class="flex items-center gap-2.5 text-sm text-gray-900">
                       <DollarSign :size="18" class="shrink-0 text-gray-400" />
-                      <span class="truncate">${{ space.priceHour }}/hora</span>
+                      <span class="truncate">{{ space.priceHour }}/hora</span>
                     </p>
                   </div>
                 </div>
