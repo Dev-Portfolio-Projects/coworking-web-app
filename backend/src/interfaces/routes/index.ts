@@ -4,6 +4,7 @@ import { DrizzleSpaceRepository } from '../../infrastructure/repositories/space.
 import { DrizzleAmenityRepository } from '../../infrastructure/repositories/amenity.repository.impl.js';
 import { DrizzleBookingRepository } from '../../infrastructure/repositories/booking.repository.impl.js';
 import { DrizzleSpaceAvailabilityRepository } from '../../infrastructure/repositories/space-availability.repository.impl.js';
+import { DrizzleDashboardRepository } from '../../infrastructure/repositories/dashboard.repository.impl.js';
 import { BcryptHashService } from '../../infrastructure/services/hash.service.impl.js';
 import { JwtService } from '../../infrastructure/config/jwt.js';
 import { BookingService } from '../../domain/services/booking.service.js';
@@ -37,12 +38,14 @@ import { ListBookingsUseCase } from '../../application/use-cases/bookings/list-b
 import { GetBookingUseCase } from '../../application/use-cases/bookings/get-booking.use-case.js';
 import { CheckAvailabilityUseCase } from '../../application/use-cases/availability/check-availability.use-case.js';
 import { GetSpaceAvailabilityUseCase } from '../../application/use-cases/availability/get-space-availability.use-case.js';
+import { GetDashboardDataUseCase } from '../../application/use-cases/dashboard/get-dashboard-data.use-case.js';
 import { AuthController } from '../controllers/auth.controller.js';
 import { UserController } from '../controllers/user.controller.js';
 import { CatalogController } from '../controllers/catalog.controller.js';
 import { SpaceController } from '../controllers/space.controller.js';
 import { AmenityController } from '../controllers/amenity.controller.js';
 import { BookingController } from '../controllers/booking.controller.js';
+import { DashboardController } from '../controllers/dashboard.controller.js';
 import { AuthMiddleware } from '../middlewares/auth.middleware.js';
 import { createAuthRouter } from './auth.routes.js';
 import { createUserRouter } from './user.routes.js';
@@ -50,12 +53,14 @@ import { createCatalogRouter } from './catalog.routes.js';
 import { createSpaceRouter } from './space.routes.js';
 import { createAmenityRouter } from './amenity.routes.js';
 import { createBookingRouter } from './booking.routes.js';
+import { createDashboardRouter } from './dashboard.routes.js';
 
 const userRepository = new DrizzleUserRepository();
 const spaceRepository = new DrizzleSpaceRepository();
 const amenityRepository = new DrizzleAmenityRepository();
 const bookingRepository = new DrizzleBookingRepository();
 const spaceAvailabilityRepository = new DrizzleSpaceAvailabilityRepository();
+const dashboardRepository = new DrizzleDashboardRepository();
 const hashService = new BcryptHashService();
 const authService = new JwtService();
 const bookingService = new BookingService();
@@ -104,6 +109,7 @@ const amenityAdminController = new AmenityController(
 const bookingController = new BookingController(
   createBookingUseCase, cancelBookingUseCase, listMyBookingsUseCase, listBookingsUseCase, getBookingUseCase, checkAvailabilityUseCase, preReserveBookingUseCase, completeBookingUseCase,
 );
+const dashboardController = new DashboardController(new GetDashboardDataUseCase(dashboardRepository));
 const authMiddleware = new AuthMiddleware(authService, userRepository);
 
 const router = Router();
@@ -114,5 +120,6 @@ router.use('/catalog', createCatalogRouter(catalogController));
 router.use('/spaces', createSpaceRouter(spaceAdminController, authMiddleware));
 router.use('/amenities', createAmenityRouter(amenityAdminController, authMiddleware));
 router.use('/bookings', createBookingRouter(bookingController, authMiddleware));
+router.use('/dashboard', createDashboardRouter(dashboardController, authMiddleware));
 
 export default router;

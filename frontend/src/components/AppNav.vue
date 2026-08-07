@@ -3,7 +3,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useRouter, useRoute } from "vue-router";
 import { ref, computed } from "vue";
 import { motion, Motion } from "motion-v";
-import { Building2, DoorOpen, Boxes, LogIn, User, LogOut, Users, Menu, X, CalendarDays, Shield, Briefcase } from "@lucide/vue";
+import { Building2, DoorOpen, Boxes, LogIn, User, LogOut, Users, Menu, X, CalendarDays, Shield, Briefcase, LayoutDashboard } from "@lucide/vue";
 import { ROLE_ADMIN } from "@/utils/roles";
 
 const auth = useAuthStore();
@@ -34,6 +34,7 @@ const roleColor = (id?: number) =>
       : 'bg-gray-100 text-gray-600'
 
 const adminTabs = computed(() => [
+  { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'Usuarios', path: '/admin/usuarios', icon: Users },
   { label: 'Recursos', path: '/admin/recursos', icon: Boxes },
   { label: 'Espacios', path: '/admin/espacios', icon: DoorOpen },

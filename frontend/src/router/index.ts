@@ -33,7 +33,11 @@ const router = createRouter({
     },
     {
       path: '/admin',
-      name: 'admin',
+      redirect: '/admin/dashboard',
+    },
+    {
+      path: '/admin/dashboard',
+      name: 'admin-dashboard',
       component: () => import('@/views/admin/AdminDashboard.vue'),
       meta: { requiresAdmin: true },
     },
