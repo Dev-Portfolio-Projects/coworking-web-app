@@ -5,6 +5,7 @@ import MouseGlowBackground from "@/components/MouseGlowBackground.vue";
 
 defineProps<{
   title: string;
+  subtitle?: string;
   searchPlaceholder?: string;
   addLabel?: string;
 }>();
@@ -17,7 +18,7 @@ const emit = defineEmits<{ add: [] }>();
   <MouseGlowBackground>
     <div class="relative flex h-full min-h-0 flex-col">
       <div class="shrink-0">
-        <div class="mx-auto max-w-7xl px-4 py-1 sm:px-6 sm:py-2">
+        <div class="mx-auto w-full max-w-6xl px-6 py-5">
           <Motion
             :initial="{ opacity: 0, y: -15 }"
             :animate="{ opacity: 1, y: 0 }"
@@ -28,49 +29,51 @@ const emit = defineEmits<{ add: [] }>();
             >
               {{ title }}
             </h1>
+            <p
+              v-if="subtitle"
+              class="mt-2 text-sm text-gray-500 sm:text-base"
+            >
+              {{ subtitle }}
+            </p>
           </Motion>
 
           <Motion
             :initial="{ opacity: 0, y: -10 }"
             :animate="{ opacity: 1, y: 0 }"
             :transition="{ delay: 0.1, duration: 0.4 }"
-            class="mt-4 mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
           >
-            <div class="relative w-full sm:flex-1 md:max-w-56">
-              <Search
-                :size="17"
-                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                v-model="searchQuery"
-                :placeholder="searchPlaceholder ?? 'Buscar...'"
-                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-              />
-            </div>
+            <div class="mt-4 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-white/80 p-4 backdrop-blur-xl">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="relative w-full sm:min-w-[220px] sm:flex-1">
+                  <Search
+                    :size="16"
+                    class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  />
+                  <input
+                    v-model="searchQuery"
+                    :placeholder="searchPlaceholder ?? 'Buscar...'"
+                    class="h-10 w-full rounded-xl border border-gray-200 bg-gray-50 pl-9 pr-4 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                  />
+                </div>
 
-            <button
-              v-if="addLabel"
-              class="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 sm:w-auto"
-              @click="emit('add')"
-            >
-              <Plus :size="17" />
-              {{ addLabel }}
-            </button>
+                <slot name="filters" />
+
+                <button
+                  v-if="addLabel"
+                  class="flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-medium text-white transition hover:bg-blue-700 sm:w-auto"
+                  @click="emit('add')"
+                >
+                  <Plus :size="16" />
+                  {{ addLabel }}
+                </button>
+              </div>
+            </div>
           </Motion>
         </div>
       </div>
 
       <div class="flex min-h-0 flex-1 overflow-hidden">
-        <div
-          class="mx-auto flex h-full min-h-0 w-full max-w-7xl flex-col px-4 sm:px-6 md:flex-row md:gap-6"
-        >
-          <aside
-            v-if="$slots.filters"
-            class="shrink-0 md:sticky md:top-0 md:w-56 md:self-start"
-          >
-            <slot name="filters" />
-          </aside>
-
+        <div class="mx-auto flex h-full min-h-0 w-full max-w-6xl flex-col px-6 pb-3">
           <div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <Motion
               :initial="{ opacity: 0 }"

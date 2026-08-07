@@ -1,9 +1,16 @@
 import httpClient from './http.client'
+import type { Paginated } from './pagination'
 
 export interface AdminAmenity {
   id: number
   name: string
   description?: string
+}
+
+export interface AmenityListParams {
+  search?: string
+  page?: number
+  limit?: number
 }
 
 interface ApiResponse<T> {
@@ -13,8 +20,8 @@ interface ApiResponse<T> {
 }
 
 export const amenityService = {
-  async list() {
-    const res = await httpClient.get<ApiResponse<AdminAmenity[]>>('/amenities')
+  async list(params: AmenityListParams = {}) {
+    const res = await httpClient.get<ApiResponse<Paginated<AdminAmenity>>>('/amenities', { params })
     return res.data.data
   },
   async create(payload: { name: string; description?: string }) {

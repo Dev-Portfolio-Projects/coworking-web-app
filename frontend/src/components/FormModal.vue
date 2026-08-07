@@ -11,7 +11,7 @@ const emit = defineEmits<{ close: [] }>()
         class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
         @click.self="emit('close')"
       >
-        <div class="mx-4 w-full max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:p-8">
+        <div class="mx-4 w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:p-8">
           <div class="mb-6 flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">{{ title }}</h2>
             <button

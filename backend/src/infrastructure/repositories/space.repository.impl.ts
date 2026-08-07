@@ -1,9 +1,9 @@
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, and, or, ilike, desc, sql, gte, lte, isNull } from 'drizzle-orm';
 import { getDb } from '../database/connection.js';
 import { spaces } from '../database/schema/spaces.js';
 import { amenities } from '../database/schema/amenities.js';
 import { spaceAmenities } from '../database/schema/space_amenities.js';
-import type { SpaceRepository } from '../../domain/repositories/space.repository.js';
+import type { SpaceRepository, SpaceListFilters, SpacePagination } from '../../domain/repositories/space.repository.js';
 import { SpaceEntity } from '../../domain/entities/space.entity.js';
 import { AmenityEntity } from '../../domain/entities/amenity.entity.js';
 import type { SpaceStatus } from '../../shared/types/index.js';
@@ -13,28 +13,82 @@ export class DrizzleSpaceRepository implements SpaceRepository {
     return getDb();
   }
 
-  async findAll(status?: SpaceStatus): Promise<SpaceEntity[]> {
-    const conditions = [];
-    if (status) {
-      conditions.push(eq(spaces.status, status));
+  async findAll(filters?: SpaceListFilters, pagination?: SpacePagination): Promise<{ items: SpaceEntity[]; total: number }> {
+    const conditions = [isNull(spaces.deletedAt)];
+    if (filters?.status) {
+      conditions.push(eq(spaces.status, filters.status));
+    }
+    if (filters?.search) {
+      const pattern = `%${filters.search}%`;
+      const searchCondition = or(ilike(spaces.name, pattern), ilike(spaces.description, pattern));
+      if (searchCondition) conditions.push(searchCondition);
+    }
+    if (filters?.capacityMin !== undefined) {
+      conditions.push(gte(spaces.capacity, filters.capacityMin));
+    }
+    if (filters?.capacityMax !== undefined) {
+      conditions.push(lte(spaces.capacity, filters.capacityMax));
+    }
+    if (filters?.priceMin !== undefined) {
+      conditions.push(sql`cast(${spaces.priceHour} as numeric) >= ${filters.priceMin}`);
+    }
+    if (filters?.priceMax !== undefined) {
+      conditions.push(sql`cast(${spaces.priceHour} as numeric) <= ${filters.priceMax}`);
+    }
+    if (filters?.amenityId !== undefined) {
+      conditions.push(
+        sql`exists (select 1 from ${spaceAmenities} sa where sa.space_id = ${spaces.id} and sa.amenity_id = ${filters.amenityId})`,
+      );
     }
 
-    const rows = await this.db
-      .select()
-      .from(spaces)
-      .where(conditions.length > 0 ? conditions[0] : undefined);
+    const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-    const spaceIds = rows.map(r => r.id);
+    const page = pagination?.page ?? 1;
+    const limit = pagination?.limit ?? 12;
+
+    const totalSql = sql<number>`(select count(*) from ${spaces} ${where ? sql`where ${where}` : sql``})`;
+
+    let query = this.db
+      .select({
+        id: spaces.id,
+        name: spaces.name,
+        description: spaces.description,
+        capacity: spaces.capacity,
+        priceHour: spaces.priceHour,
+        images: spaces.images,
+        status: spaces.status,
+        createdAt: spaces.createdAt,
+        updatedAt: spaces.updatedAt,
+        deletedAt: spaces.deletedAt,
+        total: totalSql,
+      })
+      .from(spaces)
+      .where(where)
+      .orderBy(desc(spaces.createdAt), spaces.id)
+      .$dynamic();
+
+    if (limit > 0) {
+      query = query.limit(limit).offset((page - 1) * limit);
+    }
+
+    const rows = await query;
+
+    const spaceIds = rows.map((r) => r.id);
     const amenityMap = await this.loadAmenities(spaceIds);
 
-    return rows.map(row => this.toEntity(row, amenityMap.get(row.id)));
+    const total = rows.length > 0 ? Number(rows[0].total ?? 0) : 0;
+
+    return {
+      items: rows.map((row) => this.toEntity(row, amenityMap.get(row.id))),
+      total,
+    };
   }
 
   async findById(id: number): Promise<SpaceEntity | null> {
     const rows = await this.db
       .select()
       .from(spaces)
-      .where(eq(spaces.id, id))
+      .where(and(eq(spaces.id, id), isNull(spaces.deletedAt)))
       .limit(1);
 
     if (rows.length === 0) return null;
@@ -125,13 +179,7 @@ export class DrizzleSpaceRepository implements SpaceRepository {
   }
 
   async delete(id: number): Promise<void> {
-    await this.db.delete(spaceAmenities).where(eq(spaceAmenities.spaceId, id));
-    await this.db.delete(spaces).where(eq(spaces.id, id));
-  }
-
-  async listAmenities(): Promise<AmenityEntity[]> {
-    const rows = await this.db.select().from(amenities);
-    return rows.map(r => new AmenityEntity(r.id, r.name, r.description ?? undefined));
+    await this.db.update(spaces).set({ deletedAt: new Date() }).where(eq(spaces.id, id));
   }
 
   private async loadAmenities(spaceIds: number[]): Promise<Map<number, AmenityEntity[]>> {
@@ -148,7 +196,7 @@ export class DrizzleSpaceRepository implements SpaceRepository {
     const amenityRows = await this.db
       .select()
       .from(amenities)
-      .where(inArray(amenities.id, amenityIds));
+      .where(and(inArray(amenities.id, amenityIds), isNull(amenities.deletedAt)));
 
     const amenityEntities = new Map<number, AmenityEntity>();
     for (const a of amenityRows) {

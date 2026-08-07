@@ -30,10 +30,11 @@ function changeWord() {
   currentWord.value = dynamicWords[wordIndex.value];
 }
 
-const carouselX = ref(0);
+const carouselEl = ref<HTMLElement | null>(null);
 const paused = ref(false);
 
 let animationFrame = 0;
+let offset = 0;
 
 const CARD_WIDTH = 354;
 const GAP = 24;
@@ -41,11 +42,13 @@ const GAP = 24;
 const cardsWidth = (CARD_WIDTH + GAP) * 5;
 
 function animateCarousel() {
-  if (!paused.value) {
-    carouselX.value -= 0.55;
-    if (Math.abs(carouselX.value) >= cardsWidth) {
-      carouselX.value = 0;
+  if (!document.hidden && !paused.value && carouselEl.value) {
+    offset -= 0.55;
+    if (Math.abs(offset) >= cardsWidth) {
+      offset = 0;
     }
+
+    carouselEl.value.style.transform = `translate3d(${offset}px,0,0)`;
   }
 
   animationFrame = requestAnimationFrame(animateCarousel);
@@ -175,14 +178,6 @@ onUnmounted(() => {
             </span>
           </h1>
 
-          <p
-            class="mx-auto mt-6 max-w-3xl text-base leading-relaxed text-gray-600 sm:text-lg"
-          >
-            Reserva oficinas privadas, escritorios y salas profesionales en
-            espacios diseñados para empresas, freelancers y equipos que buscan
-            crecer sin límites.
-          </p>
-
           <div
             class="relative mt-10 w-full overflow-hidden py-6"
             @mouseenter="paused = true"
@@ -198,11 +193,9 @@ onUnmounted(() => {
               class="absolute right-0 top-6 z-20 h-[294px] sm:h-[270px] w-24 bg-gradient-to-l from-gray-50 via-gray-50/80 to-transparent"
             />
 
-            <Motion
+            <div
+              ref="carouselEl"
               class="flex gap-6 will-change-transform"
-              :style="{
-                transform: `translate3d(${carouselX}px,0,0)`,
-              }"
             >
               <template v-for="loop in 2" :key="loop">
                 <Motion
@@ -249,7 +242,7 @@ onUnmounted(() => {
                   </div>
                 </Motion>
               </template>
-            </Motion>
+            </div>
           </div>
         </Motion>
       </section>

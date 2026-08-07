@@ -1,9 +1,23 @@
 import type { SpaceEntity } from '../entities/space.entity.js';
-import type { AmenityEntity } from '../entities/amenity.entity.js';
 import type { SpaceStatus } from '../../shared/types/index.js';
 
+export interface SpaceListFilters {
+  status?: SpaceStatus;
+  search?: string;
+  capacityMin?: number;
+  capacityMax?: number;
+  priceMin?: number;
+  priceMax?: number;
+  amenityId?: number;
+}
+
+export interface SpacePagination {
+  page?: number;
+  limit?: number;
+}
+
 export interface SpaceRepository {
-  findAll(status?: SpaceStatus): Promise<SpaceEntity[]>;
+  findAll(filters?: SpaceListFilters, pagination?: SpacePagination): Promise<{ items: SpaceEntity[]; total: number }>;
   findById(id: number): Promise<SpaceEntity | null>;
   create(data: {
     name: string;
@@ -24,5 +38,4 @@ export interface SpaceRepository {
     amenityIds?: number[];
   }): Promise<SpaceEntity>;
   delete(id: number): Promise<void>;
-  listAmenities(): Promise<AmenityEntity[]>;
 }

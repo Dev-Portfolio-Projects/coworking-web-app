@@ -1,6 +1,23 @@
 <script setup lang="ts">
 import { Trash2, X } from '@lucide/vue'
-defineProps<{ show: boolean; title: string; message: string; loading?: boolean }>()
+import type { Component } from 'vue'
+
+withDefaults(
+  defineProps<{
+    show: boolean
+    title: string
+    message: string
+    loading?: boolean
+    confirmLabel?: string
+    confirmIcon?: Component
+  }>(),
+  {
+    loading: false,
+    confirmLabel: 'Eliminar',
+    confirmIcon: () => Trash2,
+  },
+)
+
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 </script>
 
@@ -28,8 +45,8 @@ const emit = defineEmits<{ confirm: []; cancel: [] }>()
               :disabled="loading"
               @click="emit('confirm')"
             >
-              <Trash2 :size="16" />
-              Eliminar
+              <component :is="confirmIcon" :size="16" />
+              {{ confirmLabel }}
             </button>
           </div>
         </div>

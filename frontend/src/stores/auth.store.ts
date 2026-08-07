@@ -1,38 +1,51 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { authService, type LoginResponse } from '@/services/auth.service'
+import { authService, type AuthUser } from '@/services/auth.service'
+
+function readStoredUser(): AuthUser | null {
+  const raw = localStorage.getItem('user')
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as AuthUser
+  } catch {
+    return null
+  }
+}
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('token'))
-  const user = ref<LoginResponse['user'] | null>(null)
+  const user = ref<AuthUser | null>(readStoredUser())
 
-  const isAuthenticated = computed(() => !!token.value)
+  const isAuthenticated = computed(() => !!user.value)
   const role = computed(() => user.value?.roleId)
+
+  function persistUser(value: AuthUser) {
+    user.value = value
+    localStorage.setItem('user', JSON.stringify(value))
+  }
 
   async function login(email: string, password: string) {
     const data = await authService.login({ email, password })
-    token.value = data.token
-    user.value = data.user
-    localStorage.setItem('token', data.token)
+    persistUser(data.user)
   }
 
   async function register(email: string, password: string, name: string) {
     const data = await authService.register({ email, password, name })
-    token.value = data.token
-    user.value = data.user
-    localStorage.setItem('token', data.token)
+    persistUser(data.user)
   }
 
   async function fetchProfile() {
     const data = await authService.getProfile()
-    user.value = data
+    persistUser(data)
   }
 
-  function logout() {
-    token.value = null
-    user.value = null
-    localStorage.removeItem('token')
+  async function logout() {
+    try {
+      await authService.logout()
+    } finally {
+      user.value = null
+      localStorage.removeItem('user')
+    }
   }
 
-  return { token, user, isAuthenticated, role, login, register, fetchProfile, logout }
+  return { user, isAuthenticated, role, login, register, fetchProfile, logout }
 })

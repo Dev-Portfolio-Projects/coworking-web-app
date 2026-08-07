@@ -2,62 +2,74 @@
 import AdminPageLayout from "@/components/AdminPageLayout.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import FormModal from "@/components/FormModal.vue";
+import AvailabilityModal from "@/components/AvailabilityModal.vue";
 import { useSpaceStore } from "@/stores/space.store";
 import {
-    CheckCircle,
-    ChevronDown,
+    Calendar,
     ChevronLeft,
     ChevronRight,
     DollarSign,
     DoorOpen,
-    List,
+    FileText,
     Pencil,
     Save,
     Tag,
     Trash2,
     Users,
-    XCircle,
 } from "@lucide/vue";
 import { Motion } from "motion-v";
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import PaginationBar from "@/components/PaginationBar.vue";
+import SelectDropdown from "@/components/SelectDropdown.vue";
 
 const spaceStore = useSpaceStore();
 
 const search = ref("");
 const statusFilter = ref<"ALL" | "AVAILABLE" | "UNAVAILABLE">("ALL");
 
-const filtered = computed(() => {
-  let items = spaceStore.spaces;
-  if (search.value) {
-    const q = search.value.toLowerCase();
-    items = items.filter((s) => s.name.toLowerCase().includes(q));
-  }
-  if (statusFilter.value !== "ALL") {
-    items = items.filter((s) => s.status === statusFilter.value);
-  }
-  return items;
+const statusFilterOptions = [
+  { value: "ALL", label: "Todos los espacios" },
+  { value: "AVAILABLE", label: "Disponibles" },
+  { value: "UNAVAILABLE", label: "No disponibles" },
+];
+
+const page = ref(1);
+const limit = ref(6);
+
+function load() {
+  spaceStore.fetchSpaces({
+    status: statusFilter.value === "ALL" ? undefined : statusFilter.value,
+    search: search.value || undefined,
+    page: page.value,
+    limit: limit.value,
+  });
+}
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    page.value = 1;
+    load();
+  }, 400);
 });
 
-const cardPage = ref(1);
-const cardsPerPage = ref<number>(6);
-const totalCardPages = computed(() =>
-  filtered.value.length > 0
-    ? Math.ceil(filtered.value.length / cardsPerPage.value)
-    : 0,
+watch(statusFilter, () => {
+  page.value = 1;
+  load();
+});
+watch(page, load);
+watch(limit, () => {
+  page.value = 1;
+  load();
+});
+watch(
+  () => spaceStore.totalPages,
+  (totalPages) => {
+    if (totalPages > 0 && page.value > totalPages) page.value = totalPages;
+  },
 );
-const paginatedCards = computed(() => {
-  if (cardsPerPage.value === Infinity) return filtered.value;
-  const start = (cardPage.value - 1) * cardsPerPage.value;
-  return filtered.value.slice(start, start + cardsPerPage.value);
-});
-watch([search, statusFilter, cardsPerPage], () => {
-  cardPage.value = 1;
-});
-watch(totalCardPages, (total) => {
-  if (cardPage.value > total) {
-    cardPage.value = Math.max(total, 1);
-  }
-});
 
 const showForm = ref(false);
 const editingSpace = ref<number | null>(null);
@@ -67,28 +79,25 @@ const formDescription = ref("");
 const formCapacity = ref(1);
 const formPriceHour = ref(0);
 const formStatus = ref<"AVAILABLE" | "UNAVAILABLE">("AVAILABLE");
-const openStatus = ref(false);
-const statusSelectRef = ref<HTMLElement | null>(null);
-
-function onDocumentClick(event: MouseEvent) {
-  if (statusSelectRef.value && !statusSelectRef.value.contains(event.target as Node)) {
-    openStatus.value = false;
-  }
-}
-
-onMounted(() => document.addEventListener("click", onDocumentClick));
-onUnmounted(() => document.removeEventListener("click", onDocumentClick));
+const statusOptions = [
+  { value: "AVAILABLE", label: "Disponible" },
+  { value: "UNAVAILABLE", label: "No disponible" },
+];
 const formAmenityIds = ref<number[]>([]);
 
 const amenityPage = ref(0);
-const isMobile = ref(window.innerWidth < 640);
+const viewWidth = ref(window.innerWidth);
 function onResize() {
-  isMobile.value = window.innerWidth < 640;
+  viewWidth.value = window.innerWidth;
 }
 onMounted(() => window.addEventListener("resize", onResize));
 onUnmounted(() => window.removeEventListener("resize", onResize));
 
-const amenitiesPerPage = computed(() => (isMobile.value ? 1 : 2));
+const amenitiesPerPage = computed(() => {
+  if (viewWidth.value < 640) return 1;
+  if (viewWidth.value < 1024) return 2;
+  return 3;
+});
 const amenityTotalPages = computed(() =>
   Math.max(1, Math.ceil(spaceStore.amenities.length / amenitiesPerPage.value)),
 );
@@ -105,7 +114,6 @@ function openCreate() {
   formPriceHour.value = 0;
   formStatus.value = "AVAILABLE";
   formAmenityIds.value = [];
-  openStatus.value = false;
   showForm.value = true;
   amenityPage.value = 0;
 }
@@ -120,7 +128,6 @@ function openEdit(id: number) {
   formPriceHour.value = Number(s.priceHour);
   formStatus.value = s.status;
   formAmenityIds.value = s.amenities?.map((a) => a.id) ?? [];
-  openStatus.value = false;
   showForm.value = true;
   amenityPage.value = 0;
 }
@@ -157,6 +164,14 @@ const showConfirm = ref(false);
 const deleting = ref(false);
 const deletingId = ref<number | null>(null);
 
+const showAvailability = ref(false);
+const availabilitySpace = ref<{ id: number; name: string } | null>(null);
+
+function openAvailability(id: number, name: string) {
+  availabilitySpace.value = { id, name };
+  showAvailability.value = true;
+}
+
 function confirmDelete(id: number) {
   deletingId.value = id;
   showConfirm.value = true;
@@ -167,7 +182,7 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await spaceStore.deleteSpace(deletingId.value);
-    cardPage.value = 1;
+    page.value = 1;
     showConfirm.value = false;
     deletingId.value = null;
   } finally {
@@ -176,7 +191,7 @@ async function handleDelete() {
 }
 
 onMounted(() => {
-  spaceStore.fetchSpaces();
+  load();
   spaceStore.fetchAmenities();
 });
 </script>
@@ -190,52 +205,11 @@ onMounted(() => {
     @add="openCreate"
   >
     <template #filters>
-      <Motion
-        :initial="{ opacity: 0, y: 8 }"
-        :animate="{ opacity: 1, y: 0 }"
-        :transition="{
-          duration: 0.35,
-          ease: 'easeOut',
-        }"
-      >
-        <div
-          class="flex flex-row flex-wrap justify-between gap-2 md:flex-col md:gap-2"
-        >
-          <button
-            class="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-medium transition md:w-full md:flex-none md:text-left"
-            :class="
-              statusFilter === 'ALL'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            "
-            @click="statusFilter = 'ALL'"
-          >
-            <List :size="15" class="mr-1.5 inline" />Todos
-          </button>
-          <button
-            class="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-medium transition md:w-full md:flex-none md:text-left"
-            :class="
-              statusFilter === 'AVAILABLE'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            "
-            @click="statusFilter = 'AVAILABLE'"
-          >
-            <CheckCircle :size="15" class="mr-1.5 inline" />Disponible
-          </button>
-          <button
-            class="flex-1 rounded-xl px-4 py-2.5 text-center text-sm font-medium transition md:w-full md:flex-none md:text-left"
-            :class="
-              statusFilter === 'UNAVAILABLE'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            "
-            @click="statusFilter = 'UNAVAILABLE'"
-          >
-            <XCircle :size="15" class="mr-1.5 inline" />No disponible
-          </button>
-        </div>
-      </Motion>
+      <SelectDropdown
+        v-model="statusFilter"
+        :options="statusFilterOptions"
+        trigger-class="h-10 w-full sm:w-56"
+      />
     </template>
 
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -256,7 +230,7 @@ onMounted(() => {
       </div>
 
       <div
-        v-else-if="filtered.length === 0"
+        v-else-if="spaceStore.spaces.length === 0"
         class="flex flex-col items-center justify-center pt-16 text-center"
       >
         <div
@@ -272,25 +246,26 @@ onMounted(() => {
 
       <div v-else class="mt-7 flex min-h-0 flex-1 flex-col md:mt-0">
         <div class="scroll-area flex-1 min-h-0 overflow-y-auto pr-4">
-          <div
-            class="grid gap-4 pb-4 max-[900px]:grid-cols-1 min-[901px]:grid-cols-2 xl:grid-cols-3"
-          >
+          <div class="grid grid-cols-1 gap-4 pb-4 md:grid-cols-2 lg:grid-cols-3">
             <Motion
-              v-for="(s, i) in paginatedCards"
+              v-for="(s, i) in spaceStore.spaces"
               :key="s.id"
               :initial="{ opacity: 0, y: 15 }"
               :animate="{ opacity: 1, y: 0 }"
               :transition="{ delay: i * 0.04, duration: 0.3 }"
+              class="h-full"
             >
-              <div
-                class="rounded-2xl border border-gray-200 bg-white/80 p-5 backdrop-blur-xl"
+              <article
+                class="group flex h-full flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-lg sm:p-6"
               >
-                <div class="flex items-start justify-between">
-                  <div>
-                    <h3 class="font-semibold text-gray-900">{{ s.name }}</h3>
-                    <p class="mt-1 line-clamp-2 text-sm text-gray-500">
-                      {{ s.description }}
-                    </p>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-2.5">
+                    <span
+                      class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600"
+                    >
+                      <DoorOpen :size="18" />
+                    </span>
+                    <h3 class="truncate text-lg font-semibold text-gray-900">{{ s.name }}</h3>
                   </div>
                   <span
                     class="shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -306,19 +281,26 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <div class="mt-3 flex gap-3 text-sm text-gray-600">
-                  <span class="flex items-center gap-1">
-                    <Users :size="14" class="text-gray-400" /> {{ s.capacity }}
-                  </span>
-                  <span class="flex items-center gap-1">
-                    <DollarSign :size="14" class="text-gray-400" />
-                    {{ s.priceHour }}/h
-                  </span>
+                <div class="mt-4 space-y-3 rounded-xl bg-gray-50 px-4 py-3">
+                  <p class="flex items-center gap-2.5 text-sm text-gray-900">
+                    <FileText :size="18" class="shrink-0 text-gray-400" />
+                    <span class="truncate">{{ s.description }}</span>
+                  </p>
+                  <div class="grid grid-cols-2 gap-3">
+                    <p class="flex items-center gap-2.5 text-sm text-gray-900">
+                      <Users :size="18" class="shrink-0 text-gray-400" />
+                      <span class="truncate">{{ s.capacity }}</span>
+                    </p>
+                    <p class="flex items-center gap-2.5 text-sm text-gray-900">
+                      <DollarSign :size="18" class="shrink-0 text-gray-400" />
+                      <span class="truncate">{{ s.priceHour }}/h</span>
+                    </p>
+                  </div>
                 </div>
 
                 <div
                   v-if="s.amenities?.length"
-                  class="mt-2 flex flex-wrap gap-1"
+                  class="mt-3 flex flex-wrap gap-1"
                 >
                   <span
                     v-for="a in s.amenities.slice(0, 2)"
@@ -338,89 +320,40 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <div class="mt-4 flex justify-end gap-2">
-                  <button
-                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-600"
-                    @click="openEdit(s.id)"
-                  >
-                    <Pencil :size="14" /> Editar
-                  </button>
-                  <button
-                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
-                    @click="confirmDelete(s.id)"
-                  >
-                    <Trash2 :size="14" /> Eliminar
-                  </button>
+                <div class="mt-auto">
+                  <div class="flex items-center justify-around gap-2 pt-4">
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-600"
+                      @click="openAvailability(s.id, s.name)"
+                    >
+                      <Calendar :size="14" /> Horarios
+                    </button>
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-600"
+                      @click="openEdit(s.id)"
+                    >
+                      <Pencil :size="14" /> Editar
+                    </button>
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
+                      @click="confirmDelete(s.id)"
+                    >
+                      <Trash2 :size="14" /> Eliminar
+                    </button>
+                  </div>
                 </div>
-              </div>
+              </article>
             </Motion>
           </div>
         </div>
 
-        <div
-          v-if="!spaceStore.loading && filtered.length > 0"
-          class="mt-7 mb-4 shrink-0 flex flex-wrap items-center justify-between gap-3 border rounded-xl border-gray-100 bg-white/80 px-4 py-3 backdrop-blur-xl"
-        >
-          <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-            <span>Mostrar:</span>
-            <button
-              v-for="n in [6, 12, 24]"
-              :key="n"
-              class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-              :class="
-                cardsPerPage === n
-                  ? 'bg-blue-100 font-medium text-blue-700'
-                  : 'hover:bg-gray-100 text-gray-600'
-              "
-              @click="cardsPerPage = n"
-            >
-              {{ n }}
-            </button>
-            <button
-              class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-              :class="
-                cardsPerPage === Infinity
-                  ? 'bg-blue-100 font-medium text-blue-700'
-                  : 'hover:bg-gray-100 text-gray-600'
-              "
-              @click="cardsPerPage = Infinity"
-            >
-              Todos
-            </button>
-          </div>
-
-          <div class="flex items-center gap-3 text-sm text-gray-500">
-            <div v-if="totalCardPages > 1" class="flex items-center gap-1">
-              <button
-                :disabled="cardPage === 1"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                @click="cardPage = Math.max(1, cardPage - 1)"
-              >
-                <ChevronLeft :size="16" />
-              </button>
-              <button
-                v-for="p in totalCardPages"
-                :key="p"
-                class="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg px-2.5 text-sm font-medium transition"
-                :class="
-                  cardPage === p
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
-                "
-                @click="cardPage = p"
-              >
-                {{ p }}
-              </button>
-              <button
-                :disabled="cardPage === totalCardPages"
-                class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-                @click="cardPage = Math.min(totalCardPages, cardPage + 1)"
-              >
-                <ChevronRight :size="16" />
-              </button>
-            </div>
-          </div>
-        </div>
+        <PaginationBar
+          v-if="!spaceStore.loading && spaceStore.spaces.length > 0"
+          v-model:page="page"
+          v-model:limit="limit"
+          :total-pages="spaceStore.totalPages"
+          :total="spaceStore.total"
+        />
       </div>
     </div>
   </AdminPageLayout>
@@ -433,125 +366,79 @@ onMounted(() => {
   >
     <template #default="{ saving }">
       <form class="space-y-4" @submit.prevent="handleSave">
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700"
-            >Nombre</label
-          >
-          <div class="relative">
-            <Tag
-              :size="17"
-              class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              v-model="formName"
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-6">
+          <div class="sm:col-span-4">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700"
+              >Nombre</label
+            >
+            <div class="relative">
+              <Tag
+                :size="17"
+                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                v-model="formName"
+                required
+                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              />
+            </div>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700"
+              >Estado</label
+            >
+            <SelectDropdown v-model="formStatus" :options="statusOptions" />
+          </div>
+          <div class="sm:col-span-4">
+            <label class="mb-1.5 block text-sm font-medium text-gray-700"
+              >Descripción</label
+            >
+            <textarea
+              v-model="formDescription"
               required
-              class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              rows="5"
+              class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+              placeholder="Descripción del espacio..."
             />
           </div>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700"
-            >Descripción</label
-          >
-          <textarea
-            v-model="formDescription"
-            required
-            rows="1"
-            class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-            placeholder="Descripción del espacio..."
-          />
-        </div>
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700"
-              >Capacidad</label
-            >
-            <div class="relative">
-              <Users
-                :size="17"
-                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                v-model.number="formCapacity"
-                type="number"
-                min="1"
-                required
-                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-              />
-            </div>
-          </div>
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-gray-700"
-              >Precio por hora</label
-            >
-            <div class="relative">
-              <DollarSign
-                :size="17"
-                class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <input
-                v-model.number="formPriceHour"
-                type="number"
-                step="0.01"
-                min="0"
-                required
-                class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-              />
-            </div>
-          </div>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium text-gray-700"
-            >Estado</label
-          >
-          <div class="relative" ref="statusSelectRef">
-            <button
-              type="button"
-              class="flex h-11 w-full items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
-              @click="openStatus = !openStatus"
-            >
-              <span>{{
-                formStatus === "AVAILABLE" ? "Disponible" : "No disponible"
-              }}</span>
-              <ChevronDown
-                :size="17"
-                class="text-gray-400 transition"
-                :class="{ 'rotate-180': openStatus }"
-              />
-            </button>
-            <Transition name="dropdown">
-              <div
-                v-if="openStatus"
-                class="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg"
+          <div class="flex flex-col gap-4 sm:col-span-2">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700"
+                >Capacidad</label
               >
-                <button
-                  type="button"
-                  class="flex w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
-                  :class="{
-                    'font-medium text-gray-900': formStatus === 'AVAILABLE',
-                  }"
-                  @click="
-                    formStatus = 'AVAILABLE';
-                    openStatus = false;
-                  "
-                >
-                  Disponible
-                </button>
-                <button
-                  type="button"
-                  class="flex w-full px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
-                  :class="{
-                    'font-medium text-gray-900': formStatus === 'UNAVAILABLE',
-                  }"
-                  @click="
-                    formStatus = 'UNAVAILABLE';
-                    openStatus = false;
-                  "
-                >
-                  No disponible
-                </button>
+              <div class="relative">
+                <Users
+                  :size="17"
+                  class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  v-model.number="formCapacity"
+                  type="number"
+                  min="1"
+                  required
+                  class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                />
               </div>
-            </Transition>
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-medium text-gray-700"
+                >Precio por hora</label
+              >
+              <div class="relative">
+                <DollarSign
+                  :size="17"
+                  class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  v-model.number="formPriceHour"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  required
+                  class="h-11 w-full rounded-xl border border-gray-200 bg-gray-50 pl-10 pr-4 text-sm outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
+            </div>
           </div>
         </div>
         <div v-if="spaceStore.amenities.length > 0">
@@ -565,7 +452,7 @@ onMounted(() => {
               :animate="{ opacity: 1, x: 0 }"
               :transition="{ duration: 0.25 }"
             >
-              <div class="grid grid-cols-2 gap-2">
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 <label
                   v-for="a in visibleAmenities"
                   :key="a.id"
@@ -651,22 +538,17 @@ onMounted(() => {
     @confirm="handleDelete"
     @cancel="showConfirm = false"
   />
+
+  <AvailabilityModal
+    :show="showAvailability"
+    :space-id="availabilitySpace?.id ?? 0"
+    :space-name="availabilitySpace?.name ?? ''"
+    @close="showAvailability = false"
+    @saved="showAvailability = false"
+  />
 </template>
 
 <style scoped>
-.dropdown-enter-active,
-.dropdown-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
-}
-
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
 .scroll-area {
   overflow-y: auto;
   scrollbar-gutter: stable;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Motion } from "motion-v";
 import { Mail, Lock, LogIn, ArrowRight, LoaderCircle } from "@lucide/vue";
@@ -8,6 +8,7 @@ import MouseGlowBackground from "@/components/MouseGlowBackground.vue";
 import { useRetryButton } from "@/composables/useRetryButton";
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 
 const email = ref("");
@@ -24,7 +25,8 @@ const buttonState = computed(() => {
 async function handleSubmit() {
   await execute(async () => {
     await auth.login(email.value, password.value);
-    router.push("/");
+    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "/";
+    router.push(redirect);
   });
 }
 </script>

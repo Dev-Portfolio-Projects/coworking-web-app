@@ -7,6 +7,7 @@ import { DeleteAmenityUseCase } from '../../application/use-cases/amenities/dele
 import { createAmenitySchema } from '../../application/dto/amenities/create-amenity.dto.js';
 import { updateAmenitySchema } from '../../application/dto/amenities/update-amenity.dto.js';
 import { success } from '../../shared/response/index.js';
+import { amenityQuerySchema } from '../../application/dto/amenities/amenity-query.dto.js';
 
 export class AmenityController {
   constructor(
@@ -17,9 +18,10 @@ export class AmenityController {
     private readonly deleteAmenityUseCase: DeleteAmenityUseCase,
   ) {}
 
-  list = async (_req: Request, res: Response, next: NextFunction) => {
+  list = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.listAmenitiesUseCase.execute();
+      const query = amenityQuerySchema.parse(req.query);
+      const result = await this.listAmenitiesUseCase.execute(query);
       res.json(success(result, 'Recursos obtenidos exitosamente'));
     } catch (error) {
       next(error);

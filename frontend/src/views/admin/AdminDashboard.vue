@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Motion } from 'motion-v'
-import { Users, DoorOpen, Boxes } from '@lucide/vue'
+import { Users, Boxes, DoorOpen, CalendarDays } from '@lucide/vue'
 import MouseGlowBackground from '@/components/MouseGlowBackground.vue'
 
 const router = useRouter()
 
 const items = [
   { label: 'Usuarios', icon: Users, route: '/admin/usuarios', color: 'blue' },
-  { label: 'Espacios', icon: DoorOpen, route: '/admin/espacios', color: 'green' },
   { label: 'Recursos', icon: Boxes, route: '/admin/recursos', color: 'purple' },
+  { label: 'Espacios', icon: DoorOpen, route: '/admin/espacios', color: 'green' },
+  { label: 'Reservas', icon: CalendarDays, route: '/admin/reservas', color: 'amber' },
 ]
 </script>
 
@@ -36,6 +37,7 @@ const items = [
                     'bg-blue-100 text-blue-600': item.color === 'blue',
                     'bg-green-100 text-green-600': item.color === 'green',
                     'bg-purple-100 text-purple-600': item.color === 'purple',
+                    'bg-amber-100 text-amber-600': item.color === 'amber',
                   }"
                 >
                   <item.icon :size="24" />

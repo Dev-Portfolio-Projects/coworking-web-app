@@ -14,6 +14,8 @@ export function createSpaceRouter(
   router.post('/', controller.create);
   router.patch('/:id', controller.update);
   router.delete('/:id', controller.delete);
+  router.get('/:id/availability', controller.getAvailability);
+  router.put('/:id/availability', controller.setAvailability);
 
   return router;
 }

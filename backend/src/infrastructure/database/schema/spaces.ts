@@ -12,4 +12,5 @@ export const spaces = pgTable('spaces', {
   status: spaceStatusEnum('status').notNull().default('AVAILABLE'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });

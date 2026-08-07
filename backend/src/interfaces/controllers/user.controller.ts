@@ -9,6 +9,7 @@ import { updateProfileSchema } from '../../application/dto/users/update-profile.
 import { createUserSchema } from '../../application/dto/users/create-user.dto.js';
 import { updateUserSchema } from '../../application/dto/users/update-user.dto.js';
 import { success } from '../../shared/response/index.js';
+import { userQuerySchema } from '../../application/dto/users/user-query.dto.js';
 
 export class UserController {
   constructor(
@@ -41,9 +42,10 @@ export class UserController {
     }
   };
 
-  list = async (_req: Request, res: Response, next: NextFunction) => {
+  list = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = await this.listUsersUseCase.execute();
+      const query = userQuerySchema.parse(req.query);
+      const result = await this.listUsersUseCase.execute(query);
       res.json(success(result, 'Usuarios obtenidos exitosamente'));
     } catch (error) {
       next(error);

@@ -1,44 +1,48 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { useAmenityStore } from "@/stores/amenity.store";
 import { Motion } from "motion-v";
-import {
-  Pencil,
-  Trash2,
-  Boxes,
-  Save,
-  ChevronLeft,
-  ChevronRight,
-} from "@lucide/vue";
+import { Pencil, Trash2, Boxes, Save, FileText } from "@lucide/vue";
 import AdminPageLayout from "@/components/AdminPageLayout.vue";
 import ConfirmModal from "@/components/ConfirmModal.vue";
 import FormModal from "@/components/FormModal.vue";
+import PaginationBar from "@/components/PaginationBar.vue";
 
 const amenityStore = useAmenityStore();
 
 const search = ref("");
+const page = ref(1);
+const limit = ref(6);
 
-const filtered = computed(() => {
-  if (!search.value) return amenityStore.amenities;
-  const q = search.value.toLowerCase();
-  return amenityStore.amenities.filter((a) => a.name.toLowerCase().includes(q));
+function load() {
+  amenityStore.fetchAmenities({
+    search: search.value || undefined,
+    page: page.value,
+    limit: limit.value,
+  });
+}
+
+let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(search, () => {
+  if (searchTimeout) clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    page.value = 1;
+    load();
+  }, 400);
 });
 
-const cardPage = ref(1);
-const cardsPerPage = ref(6);
-const totalCardPages = computed(() =>
-  filtered.value.length > 0
-    ? Math.ceil(filtered.value.length / cardsPerPage.value)
-    : 0,
+watch(page, load);
+watch(limit, () => {
+  page.value = 1;
+  load();
+});
+watch(
+  () => amenityStore.totalPages,
+  (totalPages) => {
+    if (totalPages > 0 && page.value > totalPages) page.value = totalPages;
+  },
 );
-const paginatedCards = computed(() => {
-  if (cardsPerPage.value === Infinity) return filtered.value;
-  const start = (cardPage.value - 1) * cardsPerPage.value;
-  return filtered.value.slice(start, start + cardsPerPage.value);
-});
-watch([search, cardsPerPage], () => {
-  cardPage.value = 1;
-});
 
 const showForm = ref(false);
 const editingAmenity = ref<number | null>(null);
@@ -98,6 +102,7 @@ async function handleDelete() {
   deleting.value = true;
   try {
     await amenityStore.deleteAmenity(deletingId.value);
+    page.value = 1;
     showConfirm.value = false;
     deletingId.value = null;
   } finally {
@@ -105,7 +110,7 @@ async function handleDelete() {
   }
 }
 
-onMounted(() => amenityStore.fetchAmenities());
+onMounted(() => load());
 </script>
 
 <template>
@@ -116,8 +121,11 @@ onMounted(() => amenityStore.fetchAmenities());
     v-model:search="search"
     @add="openCreate"
   >
-    <div class="flex h-full min-h-0 flex-1 flex-col">
-      <div v-if="amenityStore.loading" class="flex justify-center pt-16">
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        v-if="amenityStore.loading"
+        class="flex flex-1 items-center justify-center"
+      >
         <Motion
           :animate="{ rotate: 360 }"
           :transition="{ duration: 1.2, repeat: Infinity, ease: 'linear' }"
@@ -131,7 +139,7 @@ onMounted(() => amenityStore.fetchAmenities());
       </div>
 
       <div
-        v-else-if="filtered.length === 0"
+        v-else-if="amenityStore.amenities.length === 0"
         class="flex flex-col items-center justify-center pt-16 text-center"
       >
         <div
@@ -148,117 +156,63 @@ onMounted(() => amenityStore.fetchAmenities());
       <div v-else class="mt-7 flex min-h-0 flex-1 flex-col md:mt-0">
         <div class="scroll-area flex-1 min-h-0 overflow-y-auto pr-4">
           <div
-            class="grid gap-4 pb-4 max-[900px]:grid-cols-1 min-[901px]:grid-cols-2 xl:grid-cols-3"
+            class="grid grid-cols-1 gap-4 pb-4 md:grid-cols-2 lg:grid-cols-3"
           >
             <Motion
-              v-for="(a, i) in paginatedCards"
+              v-for="(a, i) in amenityStore.amenities"
               :key="a.id"
               :initial="{ opacity: 0, y: 15 }"
               :animate="{ opacity: 1, y: 0 }"
               :transition="{ delay: i * 0.04, duration: 0.3 }"
+              class="h-full"
             >
-              <div
-                class="rounded-2xl border border-gray-200 bg-white/80 p-5 backdrop-blur-xl"
+              <article
+                class="group flex h-full flex-col rounded-3xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-100 hover:shadow-lg sm:p-6"
               >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-600"
+                <div class="flex min-w-0 items-center gap-2.5">
+                  <span
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-600"
                   >
-                    <Boxes :size="20" />
-                  </div>
-                  <div class="min-w-0 flex-1">
-                    <p class="truncate font-medium text-gray-900">{{ a.name }}</p>
-                    <p
-                      v-if="a.description"
-                      class="line-clamp-2 text-sm text-gray-500"
+                    <Boxes :size="18" />
+                  </span>
+                  <h3 class="truncate text-lg font-semibold text-gray-900">{{ a.name }}</h3>
+                </div>
+
+                <div class="mt-4 flex items-center gap-2.5 rounded-xl bg-gray-50 px-4 py-3">
+                  <FileText :size="18" class="shrink-0 text-gray-400" />
+                  <p class="truncate text-sm text-gray-900">
+                    {{ a.description || "Sin descripción" }}
+                  </p>
+                </div>
+
+                <div class="mt-auto">
+                  <div class="flex items-center justify-end gap-2 pt-4">
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-600"
+                      @click="openEdit(a.id)"
                     >
-                      {{ a.description }}
-                    </p>
+                      <Pencil :size="14" /> Editar
+                    </button>
+                    <button
+                      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
+                      @click="confirmDelete(a.id)"
+                    >
+                      <Trash2 :size="14" /> Eliminar
+                    </button>
                   </div>
                 </div>
-                <div class="mt-4 flex justify-end gap-2">
-                  <button
-                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-blue-50 hover:text-blue-600"
-                    @click="openEdit(a.id)"
-                  >
-                    <Pencil :size="14" /> Editar
-                  </button>
-                  <button
-                    class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm text-gray-600 transition hover:bg-red-50 hover:text-red-600"
-                    @click="confirmDelete(a.id)"
-                  >
-                    <Trash2 :size="14" /> Eliminar
-                  </button>
-                </div>
-              </div>
+              </article>
             </Motion>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div
-      v-if="!amenityStore.loading && filtered.length > 0"
-      class="mt-7 mb-4 shrink-0 flex flex-wrap items-center justify-between gap-3 border rounded-xl border-gray-100 bg-white/80 px-4 py-3 backdrop-blur-xl"
-    >
-      <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
-        <span>Mostrar:</span>
-        <button
-          v-for="n in [6, 12, 24]"
-          :key="n"
-          class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-          :class="
-            cardsPerPage === n
-              ? 'bg-blue-100 font-medium text-blue-700'
-              : 'hover:bg-gray-100 text-gray-600'
-          "
-          @click="cardsPerPage = n"
-        >
-          {{ n }}
-        </button>
-        <button
-          class="rounded-lg px-3 py-1.5 text-sm font-medium transition"
-          :class="
-            cardsPerPage === Infinity
-              ? 'bg-blue-100 font-medium text-blue-700'
-              : 'hover:bg-gray-100 text-gray-600'
-          "
-          @click="cardsPerPage = Infinity"
-        >
-          Todos
-        </button>
-      </div>
-
-      <div class="flex items-center gap-3 text-sm text-gray-500">
-        <div v-if="totalCardPages > 1" class="flex items-center gap-1">
-          <button
-            :disabled="cardPage === 1"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-            @click="cardPage = Math.max(1, cardPage - 1)"
-          >
-            <ChevronLeft :size="16" />
-          </button>
-          <button
-            v-for="p in totalCardPages"
-            :key="p"
-            class="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg px-2.5 text-sm font-medium transition"
-            :class="
-              cardPage === p
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            "
-            @click="cardPage = p"
-          >
-            {{ p }}
-          </button>
-          <button
-            :disabled="cardPage === totalCardPages"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm transition hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-            @click="cardPage = Math.min(totalCardPages, cardPage + 1)"
-          >
-            <ChevronRight :size="16" />
-          </button>
-        </div>
+        <PaginationBar
+          v-if="!amenityStore.loading && amenityStore.amenities.length > 0"
+          v-model:page="page"
+          v-model:limit="limit"
+          :total-pages="amenityStore.totalPages"
+          :total="amenityStore.total"
+        />
       </div>
     </div>
   </AdminPageLayout>

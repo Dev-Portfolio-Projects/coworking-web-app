@@ -25,6 +25,10 @@ export function errorMiddleware(
       capacity: 'Capacidad',
       priceHour: 'Precio por hora',
       status: 'Estado',
+      spaceId: 'Espacio',
+      date: 'Fecha',
+      startTime: 'Hora de inicio',
+      endTime: 'Hora de fin',
     };
 
     const messages = err.errors.map((e) => {

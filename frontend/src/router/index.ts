@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { ROLE_ADMIN } from '@/utils/roles'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -25,9 +26,10 @@ const router = createRouter({
       component: () => import('@/views/CatalogView.vue'),
     },
     {
-      path: '/spaces/:id',
-      name: 'space-detail',
-      component: () => import('@/views/SpaceDetailView.vue'),
+      path: '/reservas',
+      name: 'bookings',
+      component: () => import('@/views/BookingsView.vue'),
+      meta: { requiresAuth: true },
     },
     {
       path: '/admin',
@@ -48,6 +50,12 @@ const router = createRouter({
       meta: { requiresAdmin: true },
     },
     {
+      path: '/admin/reservas',
+      name: 'admin-bookings',
+      component: () => import('@/views/admin/BookingView.vue'),
+      meta: { requiresAdmin: true },
+    },
+    {
       path: '/admin/recursos',
       name: 'admin-amenities',
       component: () => import('@/views/admin/AmenityView.vue'),
@@ -56,20 +64,21 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach(async (to) => {
+router.beforeEach((to) => {
   const auth = useAuthStore()
-  if (auth.isAuthenticated && !auth.user) {
-    try {
-      await auth.fetchProfile()
-    } catch {
-      // Sesión inválida o error de red: el interceptor HTTP redirige a /login en caso de 401
+  if (to.meta.requiresAuth) {
+    if (!auth.isAuthenticated) {
+      return '/login'
+    }
+    if (auth.role === ROLE_ADMIN && to.path.startsWith('/reservas')) {
+      return '/admin/reservas'
     }
   }
   if (to.meta.requiresAdmin) {
     if (!auth.isAuthenticated) {
       return '/login'
     }
-    if (auth.role !== 1) {
+    if (auth.role !== ROLE_ADMIN) {
       return '/'
     }
   }

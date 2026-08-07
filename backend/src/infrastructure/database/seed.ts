@@ -3,8 +3,10 @@ import { getDb } from './connection.js';
 import { roles } from './schema/roles.js';
 import { users } from './schema/users.js';
 import { amenities } from './schema/amenities.js';
+import { spaces } from './schema/spaces.js';
+import { spaceAvailability } from './schema/space_availability.js';
 import bcrypt from 'bcryptjs';
-import { eq } from 'drizzle-orm';
+import { eq, count } from 'drizzle-orm';
 
 async function seed() {
   const db = getDb();
@@ -63,6 +65,32 @@ async function seed() {
     console.log(`  ✓ ${amenitiesToInsert.length} Recursos creados`);
   } else {
     console.log('  ~ Recursos ya existen');
+  }
+
+  const existingSpaces = await db.select().from(spaces);
+  for (const space of existingSpaces) {
+    const availabilityCount = await db
+      .select({ value: count() })
+      .from(spaceAvailability)
+      .where(eq(spaceAvailability.spaceId, space.id));
+
+    if (Number(availabilityCount[0]?.value ?? 0) > 0) continue;
+
+    const slots = [];
+    const today = new Date();
+    for (let i = 1; i <= 7; i++) {
+      const day = new Date(today);
+      day.setDate(today.getDate() + i);
+      const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+      slots.push(
+        { availableDate: dateStr, startTime: '09:00', endTime: '11:00' },
+        { availableDate: dateStr, startTime: '14:00', endTime: '16:00' },
+      );
+    }
+    await db.insert(spaceAvailability).values(
+      slots.map((slot) => ({ spaceId: space.id, ...slot })),
+    );
+    console.log(`  ✓ ${space.name}: 14 horarios de ejemplo en los próximos 7 días`);
   }
 
   console.log('\nSeed completado.');

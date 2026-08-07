@@ -11,11 +11,17 @@ export class UpdateProfileUseCase {
       throw new NotFoundError('Usuario');
     }
 
+    const data: Record<string, unknown> = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.email !== undefined) data.email = dto.email;
+
+    const updated = await this.userRepository.update(userId, data);
+
     return {
-      id: user.id,
-      email: dto.email ?? user.email,
-      name: dto.name ?? user.name,
-      roleId: user.roleId,
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      roleId: updated.roleId,
     };
   }
 }

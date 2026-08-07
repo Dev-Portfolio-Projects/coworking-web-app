@@ -1,4 +1,5 @@
 import httpClient from './http.client'
+import type { Paginated } from './pagination'
 
 export interface User {
   id: number
@@ -9,6 +10,13 @@ export interface User {
   updatedAt: string
 }
 
+export interface UserListParams {
+  search?: string
+  roleId?: number
+  page?: number
+  limit?: number
+}
+
 interface ApiResponse<T> {
   success: boolean
   message: string
@@ -16,8 +24,8 @@ interface ApiResponse<T> {
 }
 
 export const userService = {
-  async list() {
-    const res = await httpClient.get<ApiResponse<User[]>>('/users')
+  async list(params: UserListParams = {}) {
+    const res = await httpClient.get<ApiResponse<Paginated<User>>>('/users', { params })
     return res.data.data
   },
   async create(payload: { email: string; password: string; name: string; roleId?: number }) {
