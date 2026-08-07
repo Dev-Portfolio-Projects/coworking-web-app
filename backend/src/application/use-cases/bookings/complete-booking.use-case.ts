@@ -20,7 +20,7 @@ export class CompleteBookingUseCase {
       throw new NotFoundError('Reserva');
     }
 
-    if (role !== 'ADMIN' && booking.userId !== userId) {
+    if (role !== 'ADMIN' && role !== 'STAFF' && booking.userId !== userId) {
       throw new ForbiddenError('No puedes completar esta reserva');
     }
 

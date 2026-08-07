@@ -31,8 +31,8 @@ export class BookingController {
     try {
       const { userId, role } = (req as any).user;
       const dto = createBookingSchema.parse(req.body);
-      if (dto.userId !== undefined && (role as Role) !== 'ADMIN') {
-        throw new ForbiddenError('Solo un administrador puede crear reservas para otros usuarios');
+      if (dto.userId !== undefined && (role as Role) !== 'ADMIN' && (role as Role) !== 'STAFF') {
+        throw new ForbiddenError('Solo un administrador o staff puede crear reservas para otros usuarios');
       }
       const booking = await this.createBookingUseCase.execute(userId, dto);
       res.status(201).json(success(booking, 'Reserva creada exitosamente'));

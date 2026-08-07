@@ -9,7 +9,7 @@ export function createSpaceRouter(
 ): Router {
   const router = Router();
 
-  router.use(auth.authenticate, RoleGuard.allow('ADMIN', 'STAFF'));
+  router.use(auth.authenticate, RoleGuard.allow('ADMIN'));
 
   router.post('/', controller.create);
   router.patch('/:id', controller.update);

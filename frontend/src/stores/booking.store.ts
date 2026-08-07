@@ -5,6 +5,7 @@ import { bookingService, type Booking, type BookingBillingPayload } from '@/serv
 type BookingListParams = {
   status?: string
   search?: string
+  userId?: number
   page?: number
   limit?: number
 }

@@ -4,7 +4,7 @@ import { useRouter, useRoute } from "vue-router";
 import { ref, computed } from "vue";
 import { motion, Motion } from "motion-v";
 import { Building2, DoorOpen, Boxes, LogIn, User, LogOut, Users, Menu, X, CalendarDays, Shield, Briefcase, LayoutDashboard } from "@lucide/vue";
-import { ROLE_ADMIN } from "@/utils/roles";
+import { ROLE_ADMIN, ROLE_STAFF } from "@/utils/roles";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -46,8 +46,13 @@ const clientTabs = computed(() => [
   { label: 'Mis reservas', path: '/reservas', icon: CalendarDays },
 ])
 
+const staffTabs = computed(() => [
+  { label: 'Reservas', path: '/admin/reservas', icon: CalendarDays },
+])
+
 const navTabs = computed(() => {
   if (auth.user && auth.role === ROLE_ADMIN) return adminTabs.value
+  if (auth.user && auth.role === ROLE_STAFF) return staffTabs.value
   if (auth.isAuthenticated) return clientTabs.value
   return clientTabs.value.filter(t => t.path === '/catalog')
 })

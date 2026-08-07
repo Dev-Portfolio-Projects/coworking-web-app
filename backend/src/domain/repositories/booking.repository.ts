@@ -4,6 +4,7 @@ import type { BookingStatus } from '../../shared/types/index.js';
 export interface BookingListFilters {
   status?: BookingStatus;
   search?: string;
+  userId?: number;
   page?: number;
   limit?: number;
 }

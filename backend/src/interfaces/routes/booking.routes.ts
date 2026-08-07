@@ -11,7 +11,7 @@ export function createBookingRouter(
 
   router.use(auth.authenticate);
 
-  router.get('/', RoleGuard.allow('ADMIN'), controller.listAll);
+  router.get('/', RoleGuard.allow('ADMIN', 'STAFF'), controller.listAll);
   router.get('/availability/check', controller.checkAvailability);
   router.get('/my', controller.listMy);
   router.get('/:id', controller.getById);

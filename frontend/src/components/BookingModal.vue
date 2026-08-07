@@ -100,10 +100,12 @@ const spaceOptions = computed(() =>
 )
 
 const userOptions = computed(() =>
-  userStore.users.map((u) => ({
-    value: u.id,
-    label: `${u.name} · ${u.email}`,
-  })),
+  userStore.users
+    .filter((u) => u.roleId === 3)
+    .map((u) => ({
+      value: u.id,
+      label: `${u.name} · ${u.email}`,
+    })),
 )
 
 const availableDates = computed(() => {

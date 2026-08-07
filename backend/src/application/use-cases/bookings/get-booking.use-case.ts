@@ -11,7 +11,7 @@ export class GetBookingUseCase {
       throw new NotFoundError('Reserva');
     }
 
-    if (booking.userId !== userId && userRole !== 'ADMIN') {
+    if (booking.userId !== userId && userRole !== 'ADMIN' && userRole !== 'STAFF') {
       throw new ForbiddenError('No puedes ver esta reserva');
     }
 

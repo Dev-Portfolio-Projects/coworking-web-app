@@ -113,6 +113,9 @@ export class DrizzleBookingRepository implements BookingRepository {
       const pattern = `%${filters.search}%`;
       conditions.push(or(ilike(users.name, pattern), ilike(spaces.name, pattern)));
     }
+    if (filters?.userId !== undefined) {
+      conditions.push(eq(bookings.userId, filters.userId));
+    }
 
     const where = conditions.length > 0 ? and(...conditions) : undefined;
 

@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { ROLE_ADMIN } from '@/utils/roles'
+import { ROLE_ADMIN, ROLE_STAFF } from '@/utils/roles'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -57,7 +57,7 @@ const router = createRouter({
       path: '/admin/reservas',
       name: 'admin-bookings',
       component: () => import('@/views/admin/BookingView.vue'),
-      meta: { requiresAdmin: true },
+      meta: { requiresAuth: true, roles: [ROLE_ADMIN, ROLE_STAFF] },
     },
     {
       path: '/admin/recursos',
@@ -74,8 +74,12 @@ router.beforeEach((to) => {
     if (!auth.isAuthenticated) {
       return '/login'
     }
-    if (auth.role === ROLE_ADMIN && to.path.startsWith('/reservas')) {
+    if ((auth.role === ROLE_ADMIN || auth.role === ROLE_STAFF) && to.path.startsWith('/reservas')) {
       return '/admin/reservas'
+    }
+    const roles = to.meta.roles as number[] | undefined
+    if (roles && auth.role !== undefined && !roles.includes(auth.role)) {
+      return '/'
     }
   }
   if (to.meta.requiresAdmin) {

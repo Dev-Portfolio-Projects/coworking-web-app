@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useBookingStore } from "@/stores/booking.store";
+import { useUserStore } from "@/stores/user.store";
 import { Motion } from "motion-v";
 import {
   Calendar,
@@ -21,12 +22,14 @@ import ConfirmModal from "@/components/ConfirmModal.vue";
 import type { Booking } from "@/services/booking.service";
 
 const bookingStore = useBookingStore();
+const userStore = useUserStore();
 
 const search = ref("");
 const statusFilter = ref<string>("");
+const userIdFilter = ref<number | null>(null);
 
 const statusOptions = [
-  { value: "", label: "Todas" },
+  { value: "", label: "Todos los estados" },
   { value: "PENDING", label: "Pendientes" },
   { value: "CONFIRMED", label: "Confirmadas" },
   { value: "CANCELLED", label: "Canceladas" },
@@ -44,6 +47,13 @@ const statusLabel: Record<string, string> = {
   CANCELLED: "Cancelada",
 };
 
+const userOptions = computed(() => [
+  { value: null as number | null, label: "Todos los usuarios" },
+  ...userStore.users
+    .filter((u) => u.roleId === 3)
+    .map((u) => ({ value: u.id, label: u.name })),
+]);
+
 const page = ref(1);
 const limit = ref(6);
 
@@ -51,6 +61,7 @@ function load() {
   bookingStore.fetchAllBookings({
     status: statusFilter.value || undefined,
     search: search.value || undefined,
+    userId: userIdFilter.value ?? undefined,
     page: page.value,
     limit: limit.value,
   });
@@ -67,6 +78,10 @@ watch(search, () => {
 });
 
 watch(statusFilter, () => {
+  page.value = 1;
+  load();
+});
+watch(userIdFilter, () => {
   page.value = 1;
   load();
 });
@@ -129,7 +144,10 @@ async function confirmCancel() {
   }
 }
 
-onMounted(load);
+onMounted(() => {
+  load();
+  userStore.fetchUsers({ limit: 0 });
+});
 </script>
 
 <template>
@@ -144,6 +162,11 @@ onMounted(load);
       <SelectDropdown
         v-model="statusFilter"
         :options="statusOptions"
+        trigger-class="h-10 w-full sm:w-56"
+      />
+      <SelectDropdown
+        v-model="userIdFilter"
+        :options="userOptions"
         trigger-class="h-10 w-full sm:w-56"
       />
     </template>

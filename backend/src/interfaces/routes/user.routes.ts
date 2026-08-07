@@ -12,13 +12,17 @@ export function createUserRouter(
   router.get('/profile', auth.authenticate, controller.getProfile);
   router.patch('/profile', auth.authenticate, controller.updateProfile);
 
+  const staffRouter = Router();
+  staffRouter.use(auth.authenticate, RoleGuard.allow('ADMIN', 'STAFF'));
+  staffRouter.get('/', controller.list);
+
   const adminRouter = Router();
   adminRouter.use(auth.authenticate, RoleGuard.allow('ADMIN'));
-  adminRouter.get('/', controller.list);
   adminRouter.post('/', controller.create);
   adminRouter.patch('/:id', controller.update);
   adminRouter.delete('/:id', controller.delete);
 
+  router.use('/', staffRouter);
   router.use('/', adminRouter);
 
   return router;

@@ -69,7 +69,7 @@ export const bookingService = {
     return res.data.data
   },
 
-  async listAll(params: { status?: string; search?: string; page?: number; limit?: number } = {}) {
+  async listAll(params: { status?: string; search?: string; userId?: number; page?: number; limit?: number } = {}) {
     const res = await httpClient.get<ApiResponse<Paginated<Booking>>>('/bookings', { params })
     return res.data.data
   },

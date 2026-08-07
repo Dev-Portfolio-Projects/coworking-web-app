@@ -29,7 +29,7 @@ const search = ref('')
 const statusFilter = ref<string>('')
 
 const statusOptions = [
-  { value: '', label: 'Todas' },
+  { value: '', label: 'Todos los estados' },
   { value: 'PENDING', label: 'Pendientes' },
   { value: 'CONFIRMED', label: 'Confirmadas' },
   { value: 'CANCELLED', label: 'Canceladas' },
