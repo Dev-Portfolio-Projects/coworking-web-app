@@ -9,6 +9,7 @@ if (isProduction && (!jwtSecret || jwtSecret === 'default-secret-change-in-produ
 }
 
 export const env = {
+  IS_PRODUCTION: isProduction,
   PORT: parseInt(process.env.PORT || '3000', 10),
   DATABASE_URL: process.env.DATABASE_URL || '',
   JWT_SECRET: jwtSecret || 'default-secret-change-in-production',

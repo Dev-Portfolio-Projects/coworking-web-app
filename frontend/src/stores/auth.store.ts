@@ -47,5 +47,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isAuthenticated, role, login, register, fetchProfile, logout }
+  function clearSession() {
+    user.value = null
+    localStorage.removeItem('user')
+  }
+
+  return { user, isAuthenticated, role, login, register, fetchProfile, logout, clearSession }
 })

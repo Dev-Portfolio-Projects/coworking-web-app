@@ -7,6 +7,27 @@ const httpClient = axios.create({
   withCredentials: true,
 })
 
+const PROTECTED_PREFIXES = ['/reservas', '/admin']
+let sessionRedirectQueued = false
+
+// Solo redirige a /login cuando la sesión caduca estando en una página protegida,
+// y una sola vez por carga de página. En páginas públicas simplemente limpia la
+// sesión en silencio (un 401 de fondo, p. ej. un refresco en segundo plano, no
+// debe sacar al usuario de la app).
+function handleSessionExpired(): void {
+  const current = window.location.pathname
+  const onProtectedRoute = PROTECTED_PREFIXES.some((prefix) => current.startsWith(prefix))
+  const onAuthPage = current === '/login' || current === '/register'
+
+  localStorage.removeItem('user')
+  window.dispatchEvent(new CustomEvent('auth:session-expired'))
+
+  if (onProtectedRoute && !sessionRedirectQueued && !onAuthPage) {
+    sessionRedirectQueued = true
+    window.location.href = '/login'
+  }
+}
+
 httpClient.interceptors.response.use(
   (response) => {
     const { config, data } = response
@@ -18,8 +39,7 @@ httpClient.interceptors.response.use(
   (error) => {
     const isAuthEndpoint = error.config?.url?.startsWith('/auth/')
     if (error.response?.status === 401 && !isAuthEndpoint) {
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      handleSessionExpired()
       return Promise.reject(error)
     }
     const message = error.response?.data?.message

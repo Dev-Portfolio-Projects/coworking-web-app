@@ -14,6 +14,9 @@ useRealtimeSync();
 useBackendWake();
 
 onMounted(async () => {
+  // Un 401 invalida la sesión: el interceptor HTTP notifica este evento.
+  window.addEventListener("auth:session-expired", () => auth.clearSession());
+
   if (auth.isAuthenticated) {
     try {
       await auth.fetchProfile();

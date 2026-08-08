@@ -4,6 +4,7 @@ import { LoginUseCase } from '../../application/use-cases/auth/login.use-case.js
 import { registerSchema } from '../../application/dto/auth/register.dto.js';
 import { loginSchema } from '../../application/dto/auth/login.dto.js';
 import { success } from '../../shared/response/index.js';
+import { env } from '../../infrastructure/config/env.js';
 
 const TOKEN_COOKIE = 'token';
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -11,8 +12,10 @@ const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 function tokenCookieOptions() {
   return {
     httpOnly: true,
-    sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
+    // En producción frontend (Vercel) y backend (Render) son sitios distintos:
+    // SameSite=None + Secure es obligatorio para enviar la cookie en fetch/XHR cross-site.
+    sameSite: (env.IS_PRODUCTION ? 'none' : 'lax') as 'lax' | 'none',
+    secure: env.IS_PRODUCTION,
     maxAge: TOKEN_TTL_MS,
   };
 }
