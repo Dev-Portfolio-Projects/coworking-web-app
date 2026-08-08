@@ -10,7 +10,7 @@ const httpClient = axios.create({
 httpClient.interceptors.response.use(
   (response) => {
     const { config, data } = response
-    if (data?.message && config.method !== 'get') {
+    if (data?.message && config.method !== 'get' && !(config as { skipToast?: boolean }).skipToast) {
       toast.success(data.message)
     }
     return response

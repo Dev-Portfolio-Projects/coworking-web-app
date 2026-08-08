@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import AppNav from "@/components/AppNav.vue";
+import ChatWidget from "@/components/ChatWidget.vue";
 import { Toaster } from "vue-sonner";
 import { onMounted } from "vue";
 import { useAuthStore } from "@/stores/auth.store";
 import { useRealtimeSync } from "@/composables/useRealtimeSync";
+import { useBackendWake } from "@/composables/useBackendWake";
+import { ROLE_CLIENT } from "@/utils/roles";
 
 const auth = useAuthStore();
 
 useRealtimeSync();
+useBackendWake();
 
 onMounted(async () => {
   if (auth.isAuthenticated) {
@@ -28,6 +32,8 @@ onMounted(async () => {
       <router-view />
     </main>
   </div>
+
+  <ChatWidget v-if="auth.role === ROLE_CLIENT" />
 
   <Toaster richColors position="top-right" closeButton />
 </template>
