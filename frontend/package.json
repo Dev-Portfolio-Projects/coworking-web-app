@@ -5,16 +5,32 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --build"
   },
   "dependencies": {
-    "vue": "^3.5.40"
+    "@lucide/vue": "^1.27.0",
+    "axios": "^1.18.1",
+    "chart.js": "^4.5.1",
+    "motion-v": "^2.3.0",
+    "pinia": "^4.0.2",
+    "vue": "^3.5.40",
+    "vue-chartjs": "^5.3.4",
+    "vue-router": "^5.2.0",
+    "vue-sonner": "^2.0.9"
   },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.1.2",
     "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/tsconfig": "^0.9.1",
+    "npm-run-all2": "^9.0.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
     "vite": "^8.1.5",
-    "vite-plugin-vue-devtools": "^8.1.5"
+    "vue-tsc": "^3.3.8"
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"

@@ -4,6 +4,7 @@ dist
 coverage
 logs
 *.log
+*.tsbuildinfo
 .DS_Store
 .idea
 .vscode
